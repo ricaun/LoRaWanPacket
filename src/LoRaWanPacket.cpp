@@ -379,7 +379,7 @@ void LoRaWanPacketClass::randomJoin(){
   {
     DevAddr[i] = 0;
   }
-  DevNonce = (uint16_t)random() << 8 | (uint16_t)random();
+  DevNonce = (uint16_t)random(255) << 8 | (uint16_t)random(255);
   frameCountDown = 0;
   frameCount = 0;
 }
@@ -395,7 +395,7 @@ int16_t LoRaWanPacketClass::JoinPacket()
 {
   if (DevNonce == 0) 
   {
-    DevNonce = (uint16_t)random() << 8 | (uint16_t)random();
+    DevNonce = (uint16_t)random(255) << 8 | (uint16_t)random(255);
   }
 
   payload_buf[0] = 0x00;
