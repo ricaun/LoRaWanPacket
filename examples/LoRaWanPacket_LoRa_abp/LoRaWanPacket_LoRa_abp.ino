@@ -82,7 +82,7 @@ void LoRa_sendMessage()
 {
   LoRa_TxMode();
   LoRaWanPacket.clear();
-  LoRaWanPacket.println("Hello World");
+  LoRaWanPacket.print("Hello World");
   if (LoRaWanPacket.encode()) 
   {
     LoRa.beginPacket();

@@ -14,6 +14,7 @@
 #define LORAMAC_H
 
 #include <Arduino.h>
+#include "crypto/LoRaUtilities.h"
 #include "crypto/LoRaMacCrypto.h"
 
 #define LORAWAN_BUF_SIZE 128
