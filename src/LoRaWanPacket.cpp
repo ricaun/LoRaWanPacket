@@ -311,13 +311,15 @@ int16_t LoRaWanPacketClass::decodePacket(uint8_t *buf, uint8_t len)
       frameCountDown = count + 1;
     }
 
-    uint8_t fport = buf[8];
-    uint8_t mlength = 9;
-
-    PayloadEncode((uint8_t *)(buf + mlength), len - 4 - 9, AppSKey, DevAddr, count, dir);
+    // Add fctrl optional bytes / ignore
+    uint8_t fctrl_opt = (buf[5] & 0x0F);
+    uint8_t fport = buf[8 + fctrl_opt];
+    uint8_t mlength = 9 + fctrl_opt;
 
     payload_position = 0;
-    payload_len = len - 4 - 9;
+    payload_len = len - 4 - mlength;
+
+    PayloadEncode((uint8_t *)(buf + mlength), payload_len, AppSKey, DevAddr, count, dir);
 
     // modifica para payload
     memcpy(payload_buf, (uint8_t *)(buf + mlength), payload_len);
