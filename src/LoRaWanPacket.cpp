@@ -268,6 +268,15 @@ int16_t LoRaWanPacketClass::decode()
 // ----------------------------------------------------------------------------
 int16_t LoRaWanPacketClass::decode(uint8_t *buf, uint8_t len)
 {
+
+#ifdef LORAWAN_DEBUG
+    if (debug)
+    {
+      Serial.print("Decode: ");
+      _LORA_HEX_PRINTLN(Serial, payload_buf, payload_len);
+    }
+#endif
+
   // join decode
   if (buf[0] == 0x20)
     return decodeJoin(buf, len);
@@ -313,11 +322,30 @@ int16_t LoRaWanPacketClass::decodePacket(uint8_t *buf, uint8_t len)
 
     // Add fctrl optional bytes / ignore
     uint8_t fctrl_opt = (buf[5] & 0x0F);
-    uint8_t fport = buf[8 + fctrl_opt];
+    uint8_t fport = 0;//buf[8 + fctrl_opt];
     uint8_t mlength = 9 + fctrl_opt;
 
     payload_position = 0;
-    payload_len = len - 4 - mlength;
+    payload_len = 0;
+
+    len = len - 4; // remove MIC
+    if (len > mlength) // With Payload
+    {
+      payload_len = len - mlength;
+      fport = buf[8 + fctrl_opt];
+    }
+
+#ifdef LORAWAN_DEBUG
+    if (debug)
+    {
+      Serial.print("fctrl_opt: ");
+      Serial.println(fctrl_opt);
+      Serial.print("fport: ");
+      Serial.println(fport);
+      Serial.print("payload_len: ");
+      Serial.println(payload_len);
+    }
+#endif
 
     PayloadEncode((uint8_t *)(buf + mlength), payload_len, AppSKey, DevAddr, count, dir);
 
@@ -344,17 +372,8 @@ int16_t LoRaWanPacketClass::decodeJoin(uint8_t *buf, uint8_t len)
 {
   JoinDecrypt(buf + 1, len - 1, AppKey);
 
-#ifdef LORAWAN_DEBUG
-  if (debug)
-    _LORA_HEX_PRINTLN(Serial, buf, len);
-#endif
-
   if (JoinComputeMic(buf, len - 4, AppKey))
   {
-#ifdef LORAWAN_DEBUG
-  if (debug)
-    Serial.println("MIC");
-#endif
     for (int i = 0; i < 4; i++)
       DevAddr[3 - i] = buf[7 + i];
 
@@ -363,8 +382,11 @@ int16_t LoRaWanPacketClass::decodeJoin(uint8_t *buf, uint8_t len)
 #ifdef LORAWAN_DEBUG
     if (debug)
     {
+      Serial.print("DevAddr: ");
       _LORA_HEX_PRINTLN(Serial, DevAddr, 4);
+      Serial.print("NwkSKey: ");
       _LORA_HEX_PRINTLN(Serial, NwkSKey, 16);
+      Serial.print("AppSKey: ");
       _LORA_HEX_PRINTLN(Serial, AppSKey, 16);
     }
 #endif
@@ -422,6 +444,7 @@ int16_t LoRaWanPacketClass::JoinPacket()
 
 #ifdef LORAWAN_DEBUG
   if (debug)
+    Serial.print("Join: ");
     _LORA_HEX_PRINTLN(Serial, payload_buf, payload_len);
 #endif
 
@@ -529,6 +552,7 @@ int16_t LoRaWanPacketClass::encoder(byte fport)
 
 #ifdef LORAWAN_DEBUG
   if (debug)
+    Serial.print("Encode: ");
     _LORA_HEX_PRINTLN(Serial, payload_buf, payload_len);
 #endif
   return 1;
