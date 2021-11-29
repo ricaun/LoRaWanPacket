@@ -21,7 +21,7 @@
 
 #define PORT_OTAA_JOIN_ACCEPT 500
 
-#define LORAWAN_DEBUG true;
+//#define LORAWAN_DEBUG true;
 
 class LoRaWanPacketClass : public Stream{
 public:
