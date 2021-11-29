@@ -234,7 +234,7 @@ boolean LoRaWanPacketClass::checkMic(uint8_t *buf, uint8_t len, uint8_t *key)
   if (buf[0] == 0x60 || buf[0] == 0xA0)
   {
     dir = 1;
-    if (buf[0] == 0xA0) FCtrl = 0x20;
+    if (buf[0] == 0xA0) FCtrl = FCT_ACK;
     else FCtrl = 0x00;
   }
 
@@ -321,7 +321,7 @@ int16_t LoRaWanPacketClass::decodePacket(uint8_t *buf, uint8_t len)
     }
 
     // Add fctrl optional bytes / ignore
-    uint8_t fctrl_opt = (buf[5] & 0x0F);
+    uint8_t fctrl_opt = (buf[5] & FCT_OPTLEN);
     uint8_t fport = 0;//buf[8 + fctrl_opt];
     uint8_t mlength = 9 + fctrl_opt;
 
@@ -344,6 +344,8 @@ int16_t LoRaWanPacketClass::decodePacket(uint8_t *buf, uint8_t len)
       Serial.println(fport);
       Serial.print("payload_len: ");
       Serial.println(payload_len);
+      Serial.print("FCtrl: ");
+      Serial.println(FCtrl, HEX);
     }
 #endif
 

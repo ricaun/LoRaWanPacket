@@ -35,4 +35,13 @@ void _LORA_HEX_TO_DEVICE(uint32_t &device, char * hex);
 void _LORA_INT32_TO_ID(uint8_t * a, uint32_t id);
 uint32_t _LORA_ID_TO_INT32(uint8_t * a);
 
+enum {
+    // Bitfields in frame control octet
+    FCT_ADREN       = 0x80,
+    FCT_ADRACKReq   = 0x40,
+    FCT_ACK         = 0x20,
+    FCT_MORE        = 0x10,   // also in DN direction: Class B indicator
+    FCT_OPTLEN      = 0x0F,
+};
+
 #endif
