@@ -21,7 +21,7 @@
 
 #define PORT_OTAA_JOIN_ACCEPT 500
 
-//#define LORAWAN_DEBUG true;
+#define LORAWAN_DEBUG true;
 
 class LoRaWanPacketClass : public Stream{
 public:
@@ -32,6 +32,7 @@ public:
 	uint32_t frameCountDown = 0;
 	uint8_t FPort = 0x01;
 	uint8_t FCtrl = 0x00;
+	uint8_t lastMac = 0x00;
 
 	// ----------------------------------------------- //
 	uint8_t DevEui[8];
@@ -105,6 +106,8 @@ private:
 	// check functions
 	boolean checkDev(uint8_t *buf, uint8_t len);
 	boolean checkMic(uint8_t *buf, uint8_t len, uint8_t *key);
+
+	bool IsDevStatusReq();
 };
 
 extern LoRaWanPacketClass LoRaWanPacket;

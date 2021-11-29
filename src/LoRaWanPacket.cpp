@@ -193,6 +193,14 @@ void LoRaWanPacketClass::setPort(uint8_t port)
 }
 
 // ----------------------------------------------------------------------------
+// DevStatusReq = 0x06,       // u1:battery 0,1-254,255=?, u1:7-6:RFU,5-0:margin(-32..31)
+// ----------------------------------------------------------------------------
+bool LoRaWanPacketClass::IsDevStatusReq()
+{
+  return lastMac == 0x06;
+}
+
+// ----------------------------------------------------------------------------
 // CHECKDEV
 // Function to check the DEVICE
 // Parameters:
@@ -325,6 +333,12 @@ int16_t LoRaWanPacketClass::decodePacket(uint8_t *buf, uint8_t len)
     uint8_t fport = 0;//buf[8 + fctrl_opt];
     uint8_t mlength = 9 + fctrl_opt;
 
+    for (size_t i = 0; i < fctrl_opt; i++)
+      {
+        uint8_t mac = buf[9 + i];
+        if (mac == 0x06) lastMac = mac;
+      }
+
     payload_position = 0;
     payload_len = 0;
 
@@ -346,6 +360,8 @@ int16_t LoRaWanPacketClass::decodePacket(uint8_t *buf, uint8_t len)
       Serial.println(payload_len);
       Serial.print("FCtrl: ");
       Serial.println(FCtrl, HEX);
+      Serial.print("lastMac: ");
+      Serial.println(lastMac, HEX);
     }
 #endif
 
@@ -489,13 +505,16 @@ int16_t LoRaWanPacketClass::encoder(byte fport)
   if (fport > 0)
     FPort = fport;
 
-  uint8_t mlength = 0;
 
+  uint8_t mac = 0; // Force DevStatusReq Mac
+  if (IsDevStatusReq()) mac = 3;
   
-  uint8_t buf[payload_len+1];
+  uint8_t mlength = 9 + mac;
+
+  uint8_t buf[payload_len + 1 + mac];
   // fix payload > 9
   memcpy((uint8_t *)(buf), payload_buf, payload_len);
-  memcpy((uint8_t *)(payload_buf + 9), buf, payload_len);
+  memcpy((uint8_t *)(payload_buf + mlength), buf, payload_len);
 
   //memcpy((uint8_t *)(payload_buf + 9), payload_buf, payload_len);
 
@@ -517,7 +536,7 @@ int16_t LoRaWanPacketClass::encoder(byte fport)
   payload_buf[3] = DevAddr[1];
   payload_buf[4] = DevAddr[0]; // First byte[0] of Dev_Addr
 
-  payload_buf[5] = FCtrl;               // FCtrl is normally 0
+  payload_buf[5] = FCtrl + mac;               // FCtrl is normally 0
   payload_buf[6] = frameCount % 0x100; // LSB
   payload_buf[7] = frameCount / 0x100; // MSB
 
@@ -526,8 +545,17 @@ int16_t LoRaWanPacketClass::encoder(byte fport)
   // -------------------------------
   // FPort, either 0 or 1 bytes. Must be != 0 for non MAC messages such as user payload
   //
-  payload_buf[8] = FPort; // FPort must not be 0
-  mlength = 9;
+  payload_buf[8+mac] = FPort; // FPort must not be 0
+
+  // DevStatusReq = 0x06,       // u1:battery 0,1-254,255=?, u1:7-6:RFU,5-0:margin(-32..31)
+  if (IsDevStatusReq())
+  {
+    payload_buf[8] = 0x06;
+    payload_buf[9] = 0xFF;
+    uint8_t snr = 0b00100000;
+    payload_buf[10] = (uint8_t)(0b00111111 & snr);
+    mac = 0;
+  }
 
   // FRMPayload; Payload will be AES128 encoded using AppSKey
   // See LoRa spec para 4.3.2
