@@ -197,7 +197,9 @@ void LoRaWanPacketClass::setPort(uint8_t port)
 // ----------------------------------------------------------------------------
 bool LoRaWanPacketClass::IsDevStatusReq()
 {
-  return lastMac == 0x06;
+  bool isMac = lastMac == 0x06;
+  if (isMac) lastMac = 0x06;
+  return isMac;
 }
 
 // ----------------------------------------------------------------------------
@@ -333,20 +335,24 @@ int16_t LoRaWanPacketClass::decodePacket(uint8_t *buf, uint8_t len)
     uint8_t fport = 0;//buf[8 + fctrl_opt];
     uint8_t mlength = 9 + fctrl_opt;
 
-    for (size_t i = 0; i < fctrl_opt; i++)
-      {
-        uint8_t mac = buf[9 + i];
-        if (mac == 0x06) lastMac = mac;
-      }
-
     payload_position = 0;
     payload_len = 0;
 
     len = len - 4; // remove MIC
-    if (len > mlength) // With Payload
+    bool containPayload = (len > mlength);
+
+    if (containPayload) // With Payload
     {
       payload_len = len - mlength;
       fport = buf[8 + fctrl_opt];
+    }
+
+    for (size_t i = 0; i < fctrl_opt; i++)
+    {
+      uint8_t mac = buf[(containPayload) ? 9 : 8 + i];
+      Serial.print("mac: ");
+      Serial.println(mac, HEX);
+      if (mac == 0x06) lastMac = mac;
     }
 
 #ifdef LORAWAN_DEBUG
@@ -504,7 +510,6 @@ int16_t LoRaWanPacketClass::encoder(byte fport)
 
   if (fport > 0)
     FPort = fport;
-
 
   uint8_t mac = 0; // Force DevStatusReq Mac
   if (IsDevStatusReq()) mac = 3;
