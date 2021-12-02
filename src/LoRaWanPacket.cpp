@@ -198,7 +198,7 @@ void LoRaWanPacketClass::setPort(uint8_t port)
 bool LoRaWanPacketClass::IsDevStatusReq()
 {
   bool isMac = lastMac == 0x06;
-  if (isMac) lastMac = 0x06;
+  if (isMac) lastMac = 0x00;
   return isMac;
 }
 
